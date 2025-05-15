@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import type { PinCodeData } from "./types/PinCodeData";
-import { getPinCodeData } from "./services/getPinCodeData";
+import { getPinCodeData, getPostOfficeData } from "./services/getPinCodeData";
 import Loading from "./components/Loading";
 import SearchComponent from "./components/SearchComponent";
-import DisplayPostals from "./components/ DisplayPostals";
+import DisplayPostals from "./components/DisplayPostals";
 
 function App() {
   const [isPinCode, setIsPinCode] = useState<boolean>(true);
@@ -12,81 +12,115 @@ function App() {
   const [deliveryStatus, setDeliveryStatus] = useState<
     "Delivery" | "Non-Delivery" | "All"
   >("All");
-  const [isLoading, setIsLoading] = useState(true);
+  const [branchType, setBranchType] = useState<
+    "All" | "Head Post Office" | "Sub Post Office"
+  >("All");
+  const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     async function getData() {
-      setIsLoading(true);
       if (!searchInput) return;
-      const data = await getPinCodeData(searchInput);
-      if (data && data[0].Status !== "Error") {
-        setPostalData(data);
-        setErrorMessage(null);
-      } else {
-        setErrorMessage("No data found");
-      }
-      setIsLoading(false);
-    }
-    getData();
-  }, [searchInput]);
 
-  function handleSearchChange() {
-    setSearchInput(inputRef.current!.value);
+      if (isPinCode && !/^\d{6}$/.test(searchInput)) {
+        setErrorMessage("Please enter a valid 6-digit pin code.");
+        return;
+      }
+
+      setIsLoading(true);
+      try {
+        const data = isPinCode
+          ? await getPinCodeData(searchInput)
+          : await getPostOfficeData(searchInput);
+
+        setHasSearched(true);
+
+        if (data && data[0].Status !== "Error") {
+          setPostalData(data);
+          setErrorMessage(null);
+        } else {
+          setPostalData([]);
+          setErrorMessage("No data found");
+        }
+      } catch (error) {
+        setErrorMessage("An error occurred while fetching data" + error);
+        setPostalData([]);
+      } finally {
+        inputRef.current!.value = "";
+        setIsLoading(false);
+      }
+    }
+
+    getData();
+  }, [isPinCode, searchInput]);
+
+  function handleSearchClick() {
+    if (inputRef.current) {
+      const inputValue = inputRef.current.value.trim();
+      setSearchInput(inputValue);
+    }
   }
 
-  function onSelectDelivery(e: ChangeEvent<HTMLSelectElement>) {
-    switch (e.target.selectedIndex) {
-      case 0:
-        setDeliveryStatus("All");
+  function handleSelectDelivery(e: ChangeEvent<HTMLSelectElement>) {
+    setDeliveryStatus(e.target.value as "Delivery" | "Non-Delivery" | "All");
+  }
 
-        break;
-      case 1:
-        setDeliveryStatus("Delivery");
-        break;
-      case 2:
-        setDeliveryStatus("Non-Delivery");
-        break;
-
-      default:
-        break;
-    }
-    console.log(deliveryStatus);
+  function handleSelectBranchType(e: ChangeEvent<HTMLSelectElement>) {
+    setBranchType(
+      e.target.value as "All" | "Head Post Office" | "Sub Post Office"
+    );
   }
 
   return (
     <>
       <SearchComponent
         inputRef={inputRef}
-        fn={() => setIsPinCode(true)}
-        fn3={() => setIsPinCode(false)}
-        fn2={handleSearchChange}
-        isActive={isPinCode}
+        onSelectPinCode={() => setIsPinCode(true)}
+        onSearchClick={handleSearchClick}
+        onSelectPostOffice={() => setIsPinCode(false)}
         isPinCode={isPinCode}
       />
 
-      {!isLoading && !errorMessage ? (
+      {!isLoading && !errorMessage && hasSearched ? (
         <>
-          <div>
+          <div className="flex gap-4 p-2">
             <select
-              className="border-2"
+              className="border-2 p-2 rounded"
               name="delivery"
               id="delivery"
-              onChange={onSelectDelivery}
+              onChange={handleSelectDelivery}
+              value={deliveryStatus}
             >
-              <option value="">Delivery option</option>
+              <option value="All">All Delivery Options</option>
               <option value="Delivery">Delivery</option>
               <option value="Non-Delivery">Non-Delivery</option>
+            </select>
+
+            <select
+              className="border-2 p-2 rounded"
+              name="branchType"
+              id="branchType"
+              onChange={handleSelectBranchType}
+              value={branchType}
+            >
+              <option value="All">All Branch Types</option>
+              <option value="Head Post Office">Head Post Office</option>
+              <option value="Sub Post Office">Sub Post Office</option>
             </select>
           </div>
           <DisplayPostals
             deliveryStatus={deliveryStatus}
+            branchType={branchType}
             postalData={postalData}
           />
         </>
       ) : (
-        <Loading errorMessage={errorMessage} />
+        <Loading
+          errorMessage={hasSearched ? errorMessage : null}
+          isLoading={isLoading}
+        />
       )}
     </>
   );
