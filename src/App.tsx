@@ -4,17 +4,16 @@ import { getPinCodeData, getPostOfficeData } from "./services/getPinCodeData";
 import Loading from "./components/Loading";
 import SearchComponent from "./components/SearchComponent";
 import DisplayPostals from "./components/DisplayPostals";
+import type { FilterByBranch, FilterByDelivery } from "./types/FilterTypes";
+import SelectBranchCategory from "./components/SelectBranchCategory";
+import SelectDeliveryCategory from "./components/SelectDeliveryCategory";
 
 function App() {
   const [isPinCode, setIsPinCode] = useState<boolean>(true);
   const [postalData, setPostalData] = useState<PinCodeData[]>([]);
   const [searchInput, setSearchInput] = useState<string | null>(null);
-  const [deliveryStatus, setDeliveryStatus] = useState<
-    "Delivery" | "Non-Delivery" | "All"
-  >("All");
-  const [branchType, setBranchType] = useState<
-    "All" | "Head Post Office" | "Sub Post Office"
-  >("All");
+  const [deliveryStatus, setDeliveryStatus] = useState<FilterByDelivery>("All");
+  const [branchType, setBranchType] = useState<FilterByBranch>("All");
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [hasSearched, setHasSearched] = useState<boolean>(false);
@@ -86,29 +85,17 @@ function App() {
       {!isLoading && !errorMessage && hasSearched ? (
         <>
           <div className="flex gap-4 p-2">
-            <select
-              className="border-2 p-2 rounded"
-              name="delivery"
-              id="delivery"
+            <SelectDeliveryCategory
               onChange={handleSelectDelivery}
+              name="delivery"
               value={deliveryStatus}
-            >
-              <option value="All">All Delivery Options</option>
-              <option value="Delivery">Delivery</option>
-              <option value="Non-Delivery">Non-Delivery</option>
-            </select>
+            />
 
-            <select
-              className="border-2 p-2 rounded"
-              name="branchType"
-              id="branchType"
+            <SelectBranchCategory
               onChange={handleSelectBranchType}
               value={branchType}
-            >
-              <option value="All">All Branch Types</option>
-              <option value="Head Post Office">Head Post Office</option>
-              <option value="Sub Post Office">Sub Post Office</option>
-            </select>
+              name="branchType"
+            />
           </div>
           <DisplayPostals
             deliveryStatus={deliveryStatus}
