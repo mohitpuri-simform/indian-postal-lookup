@@ -8,12 +8,10 @@ interface ReposndStatusProps {
 function RespondStatus({ message, status }: ReposndStatusProps) {
   return (
     <div
-      className={clsx(
-        `flex justify-between p-2`,
-        status !== "Success"
-          ? "bg-red-400 text-white"
-          : "bg-green-400 text-white"
-      )}
+      className={clsx(`flex justify-between p-2`, {
+        "bg-red-400 text-white": status !== "Success",
+        "bg-green-400 text-white": status === "Success",
+      })}
     >
       <p>Message: {message}</p>
       <p>Status: {status}</p>
