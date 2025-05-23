@@ -1,3 +1,5 @@
+import { clsx } from "../utils/clsx";
+
 interface PostOfficeDetailsProps {
   name: string;
   deliveryStatus: string;
@@ -14,11 +16,12 @@ function PostOfficeDetails({
       <p className="text-blue-800 font-medium text-2xl">{name}</p>
       <div className="flex gap-4">
         <span
-          className={
-            deliveryStatus === "Delivery"
-              ? "bg-green-400 rounded px-2 py-1 text-xs"
-              : "bg-red-400 rounded px-2 py-1 text-xs"
-          }
+          className={clsx({
+            "bg-green-400 rounded px-2 py-1 text-xs":
+              deliveryStatus === "Delivery",
+            "bg-red-400 rounded px-2 py-1 text-xs":
+              deliveryStatus !== "Delivery",
+          })}
         >
           {deliveryStatus}
         </span>
